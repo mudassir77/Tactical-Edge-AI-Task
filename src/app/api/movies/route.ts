@@ -8,10 +8,29 @@ import prisma from "@/lib/db/prisma";
 
 export async function POST(request: Request) {
   try {
-    const { title, year, img, userId } = await request.json();
+    const { title, year, img } = await request.json();
 
     if (!title || !year) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
+    }
+
+    const session = await getServerSession(authOptions)
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session?.user.email
+      },
+      select: {
+        id: true
+      }
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 });
     }
 
     const newMovie = await prisma.movie.create({
@@ -19,7 +38,7 @@ export async function POST(request: Request) {
         name: title,
         year: parseInt(year, 10),
         img,
-        userId
+        userId: user.id
       },
     });
 
@@ -38,17 +57,35 @@ export async function GET(request: Request) {
 
   try {
     const session = await getServerSession(authOptions)
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session?.user.email
+      },
+      select: {
+        id: true
+      }
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+    }
+
     const movies = await prisma.movie.findMany({
       skip: (page - 1) * limit,
       take: limit,
       where: {
-        userId: session?.user.id
+        userId: user.id
       }
     });
 
     const totalMovies = await prisma.movie.count({
       where: {
-        userId: session?.user.id
+        userId: user.id
       }
     });
     const totalPages = Math.ceil(totalMovies / limit);

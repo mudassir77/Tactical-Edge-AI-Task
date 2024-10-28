@@ -2,14 +2,34 @@ import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 
 import prisma from "@/lib/db/prisma";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
+    const session = await getServerSession(authOptions)
     const movieId = parseInt(params.id, 10);
-    const { title, year, img, userId } = await request.json();
+    const { title, year, img } = await request.json();
 
-    if (isNaN(movieId) || !userId) {
+    if (isNaN(movieId)) {
       return NextResponse.json({ error: 'Invalid movie ID or missing user ID.' }, { status: 400 });
+    }
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        email: session?.user.email
+      },
+      select: {
+        id: true
+      }
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found.' }, { status: 404 });
     }
 
     const updatedMovie = await prisma.movie.update({

@@ -1,6 +1,5 @@
 'use client'
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import React, { useCallback } from 'react'
 import { Controller } from 'react-hook-form';
 import * as yup from 'yup';
@@ -35,7 +34,6 @@ const MovieDetailInputcard = ({ buttonText, imgUrl, movie }: MovieDetailInputcar
     const { handleSubmit, control, formState: { errors }, setValue } = useFormWithSchema(schema);
     const router = useRouter();
     const isEditMode = !!movie;
-    const { data: sessionData } = useSession();
 
 
     React.useEffect(() => {
@@ -50,7 +48,6 @@ const MovieDetailInputcard = ({ buttonText, imgUrl, movie }: MovieDetailInputcar
             const formData = {
                 ...data,
                 img: imgUrl || movie?.img || '',
-                userId: sessionData?.user.id,
             };
 
             const response = await fetchWithToast(isEditMode ? `/api/movies/${movie.id}` : '/api/movies', {
@@ -68,7 +65,7 @@ const MovieDetailInputcard = ({ buttonText, imgUrl, movie }: MovieDetailInputcar
         } catch (error) {
             console.error(error);
         }
-    }, [imgUrl, movie?.img, movie?.id, sessionData?.user.id, isEditMode, router]);
+    }, [imgUrl, movie?.img, movie?.id, isEditMode, router]);
 
     const handleCancel = () => {
         router.push('/');

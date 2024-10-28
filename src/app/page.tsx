@@ -1,10 +1,11 @@
-import { getServerSession } from 'next-auth';
 import React from 'react'
 
+import EmptyMovie from '@/app/components/cards/EmptyMovie';
+import MovieList from '@/app/components/cards/MovieList';
+import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { headers } from 'next/headers';
 
-import EmptyMovie from './components/cards/EmptyMovie';
-import MovieList from './components/cards/MovieList';
 
 interface Movie {
   id: number;
@@ -20,27 +21,31 @@ interface MovieResponse {
 }
 
 const homePage = async () => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/movies`, {
-    cache: 'no-store'
-  });
-  const session = await getServerSession(authOptions)
+  try {
+    const session = await getServerSession(authOptions)
+    console.log("THIS IS SESSION", session)
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/movies`, {
+      cache: 'no-store',
+      headers: headers()
+    });
 
-  if (!session) {
-    return <EmptyMovie />
+    const MovieData: MovieResponse = await response.json();
+    const { movies } = MovieData
+
+    return (
+      movies.length === 0 ?
+        <EmptyMovie />
+        :
+        <MovieList />
+    )
+
+  } catch (error) {
+    console.error(error);
+    return <div>
+      <h1 className='text-white flex justify-center items-center h-screen'>Failed to fetch movies</h1>
+    </div>
+
   }
-
-  const MovieData: MovieResponse = await response.json();
-  const { movies } = MovieData
-
-  const filteredMovies = movies.filter(movie => movie.userId === session.user.id)
-
-
-  return (
-    filteredMovies.length === 0 ?
-      <EmptyMovie />
-      :
-      <MovieList />
-  )
 }
 
 export default homePage

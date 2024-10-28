@@ -11,7 +11,6 @@ export async function fetchWithToast(
 ): Promise<any> {
   try {
     const response = await fetch(url, { ...options, cache: 'no-store' });
-
     if (!response.ok) {
       const errorData = await response.json();
       const errorMessage = options.errorMessage || errorData.message || 'An error occurred';
