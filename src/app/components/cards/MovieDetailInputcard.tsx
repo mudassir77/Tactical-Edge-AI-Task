@@ -1,15 +1,16 @@
 'use client'
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import React, { useCallback } from 'react'
 import { Controller } from 'react-hook-form';
 import * as yup from 'yup';
 
+import { fetchWithToast } from '@/lib/fetchWithToast';
 import { useFormWithSchema } from '@/hooks';
 
 import AppButton from '@/components/buttons/AppButton';
 
 import TextInput from '../inputs/TextInput';
-
 interface MovieDetailInputcardProps {
     buttonText?: string
     imgUrl: string | undefined;
@@ -34,6 +35,8 @@ const MovieDetailInputcard = ({ buttonText, imgUrl, movie }: MovieDetailInputcar
     const { handleSubmit, control, formState: { errors }, setValue } = useFormWithSchema(schema);
     const router = useRouter();
     const isEditMode = !!movie;
+    const { data: sessionData } = useSession();
+
 
     React.useEffect(() => {
         if (isEditMode) {
@@ -47,30 +50,25 @@ const MovieDetailInputcard = ({ buttonText, imgUrl, movie }: MovieDetailInputcar
             const formData = {
                 ...data,
                 img: imgUrl || movie?.img || '',
+                userId: sessionData?.user.id,
             };
-            console.log('formData:', formData);
 
-            const response = await fetch(isEditMode ? `/api/movies/${movie.id}` : '/api/movies', {
+            const response = await fetchWithToast(isEditMode ? `/api/movies/${movie.id}` : '/api/movies', {
                 method: isEditMode ? 'PUT' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(formData),
-                next: { tags: ['movies'] }
+                next: { tags: ['movies'] },
+                errorMessage: isEditMode ? 'Failed to update movie' : 'Failed to add movie',
             });
-
-            if (!response.ok) {
-                throw new Error(isEditMode ? 'Failed to update movie' : 'Failed to add movie');
-            }
-
-            const result = await response.json();
-            console.log(isEditMode ? 'Updated movie:' : 'Added movie:', result);
+            console.log(isEditMode ? 'Updated movie:' : 'Added movie:', response);
             router.push('/');
             router.refresh();
         } catch (error) {
             console.error(error);
         }
-    }, [imgUrl, movie, isEditMode, router]);
+    }, [imgUrl, movie?.img, movie?.id, sessionData?.user.id, isEditMode, router]);
 
     const handleCancel = () => {
         router.push('/');

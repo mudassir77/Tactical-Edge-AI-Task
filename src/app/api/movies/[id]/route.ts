@@ -1,15 +1,15 @@
+import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 
 import prisma from "@/lib/db/prisma";
-import { revalidatePath } from 'next/cache';
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const movieId = parseInt(params.id, 10);
-    const { title, year, img } = await request.json();
+    const { title, year, img, userId } = await request.json();
 
-    if (isNaN(movieId)) {
-      return NextResponse.json({ error: 'Invalid movie ID.' }, { status: 400 });
+    if (isNaN(movieId) || !userId) {
+      return NextResponse.json({ error: 'Invalid movie ID or missing user ID.' }, { status: 400 });
     }
 
     const updatedMovie = await prisma.movie.update({

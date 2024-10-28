@@ -1,11 +1,14 @@
 'use client';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { IoMdAddCircleOutline } from 'react-icons/io';
-import { signOut } from 'next-auth/react';
+
+import { fetchWithToast } from '@/lib/fetchWithToast';
 
 import { APP_IMAGES } from '@/constant/image';
+
 import MovieCard from './MovieCard';
 import BackgroundWrapper from '../wrapper/BackgroundWrapper';
 
@@ -18,17 +21,26 @@ interface IMovie {
   img: string;
 }
 
-interface Props {
-  movies: IMovie[];
-}
 
-const MovieList = ({ movies }: Props) => {
+const MovieList = () => {
+  const [movies, setMovies] = useState<IMovie[]>([]);
+  const [totalPages, setTotalPages] = useState<number>(1);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isLgScreen, setIsLgScreen] = useState<boolean>(false);
   const router = useRouter();
 
-  // Calculate total pages based on `movies` array length
-  const totalPages = Math.ceil(movies.length / ITEMS_PER_PAGE);
+  const fetchMovies = useCallback(async (page: number) => {
+    try {
+      const data = await fetchWithToast(`/api/movies?page=${page}&limit=${ITEMS_PER_PAGE}`, {
+        errorMessage: 'Failed to fetch movies',
+      });
+
+      setMovies(data.movies);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -41,6 +53,10 @@ const MovieList = ({ movies }: Props) => {
     return () => window.removeEventListener('resize', handleResize); // Cleanup
   }, []);
 
+  useEffect(() => {
+    fetchMovies(currentPage);
+  }, [currentPage, fetchMovies]);
+
   const handleClickPrev = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
@@ -50,9 +66,6 @@ const MovieList = ({ movies }: Props) => {
   };
 
   const handlePageClick = (page: number) => setCurrentPage(page);
-
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentMovies = movies?.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handleOnClick = useCallback((path: string) => router.push(path), [router]);
 
@@ -80,12 +93,12 @@ const MovieList = ({ movies }: Props) => {
           </div>
         </div>
         <div className='grid xl:grid-cols-4 lg:grid-cols-3 grid-cols-2 gap-4 lg:gap-6'>
-          {currentMovies.map((item: IMovie) => (
+          {movies.map((item: IMovie) => (
             <MovieCard data={item} key={item.id} />
           ))}
         </div>
         {/* Pagination Controls */}
-        {isLgScreen && totalPages >= 1 && (
+        {totalPages >= 1 && (
           <div className='flex gap-2 w-full justify-center items-center mt-6'>
             <button
               className='font-bold font-primary text-white text-base leading-4'

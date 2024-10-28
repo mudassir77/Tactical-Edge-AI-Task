@@ -4,6 +4,8 @@ import * as React from 'react';
 import '@/styles/globals.css';
 
 import { siteConfig } from '@/constant/config';
+import { ToastProvider } from '@/provider';
+import AuthProvider from '@/provider/AuthProvider';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -50,9 +52,9 @@ export default function RootLayout({
   return (
     <html>
       <body className='bg-backgroundGreen'>
-
-        {children}
-
+        <AuthProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

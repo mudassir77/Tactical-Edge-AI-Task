@@ -1,10 +1,10 @@
 'use client'
+import { signIn } from 'next-auth/react';
 import React, { useCallback, useState } from 'react';
 import { Controller } from 'react-hook-form';
 import * as yup from 'yup';
-import { signIn } from 'next-auth/react';
 
-
+import { fetchWithToast } from '@/lib/fetchWithToast';
 import { useFormWithSchema } from '@/hooks';
 
 import AppButton from '@/components/buttons/AppButton';
@@ -40,21 +40,14 @@ const SignUpCard = () => {
 
   const onSubmit = useCallback(async ({ firstName, lastName, email, password }: SignUp) => {
     try {
-      const response = await fetch('/api/signup', {
+      const response = await fetchWithToast('/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ firstName, lastName, email, password }),
+        errorMessage: 'Failed to sign up',
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to sign up');
-      }
-
-      const userData = await response.json();
-      console.log('User signed up successfully:', userData);
 
       await signIn('credentials', {
         redirect: true,
@@ -62,7 +55,7 @@ const SignUpCard = () => {
         password,
         callbackUrl: '/',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign-up error:', error);
     }
   }, []);

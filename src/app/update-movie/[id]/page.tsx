@@ -1,14 +1,13 @@
 import React from 'react';
 
+import { fetchWithToast } from '@/lib/fetchWithToast';
+
 import NewMovieCard from '@/app/components/cards/NewMovieCard';
 import BackgroundWrapper from '@/app/components/wrapper/BackgroundWrapper';
 
 const fetchMovie = async (id: string) => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/movies/${id}`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch movie');
-  }
-  return res.json();
+  const res = await fetchWithToast(`${process.env.NEXT_PUBLIC_APP_URL}/api/movies/${id}`, { cache: 'no-store', errorMessage: ' failed to fetch movie' });
+  return res;
 };
 
 const UpdateMovie = async ({ params }: { params: { id: string } }) => {

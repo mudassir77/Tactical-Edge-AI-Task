@@ -20,6 +20,7 @@ model User {
   email          String   @unique
   hashedPassword String
   image          String?
+  movie          Movie[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -31,4 +32,6 @@ model Movie {
   img       String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
 }
